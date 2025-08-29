@@ -78,3 +78,85 @@ Output:
 |second_highest_salary|
 |---------------------|
 |12500                |
+
+## 3. Sending vs. Opening Snaps
+Assume you're given tables with information on Snapchat users, including their ages and time spent sending and opening snaps.
+
+Write a query to obtain a breakdown of the time spent sending vs. opening snaps as a percentage of total time spent on these activities grouped by age group. Round the percentage to 2 decimal places in the output.
+
+Notes:
+
+Calculate the following percentages:
+- time spent sending / (Time spent sending + Time spent opening)
+- Time spent opening / (Time spent sending + Time spent opening)
+- To avoid integer division in percentages, multiply by 100.0 and not 100.
+
+`activities` table:
+|Column Name        |Type                          |
+|-------------------|------------------------------|
+|activity_id        |integer                       |
+|user_id            |integer                       |
+|activity_type      |string ('send', 'open', 'chat')|
+|time_spent         |float                         |
+|activity_date      |datetime                      |
+
+`age_breakdown` table:
+|Column Name   |Type                               |
+|--------------|-----------------------------------|
+|user_id       |integer                            |
+|age_bucket    |string ('21-25', '26-30', '31-25') |
+
+Query:
+
+    SELECT
+      age_bucket,
+      ROUND((sum_send / total * 100), 2) AS send_perc,
+      ROUND((sum_open / total * 100), 2) AS open_perc
+    FROM
+      (SELECT
+        tbl_send.age_bucket,
+        tbl_send.sum_send,
+        tbl_open.sum_open,
+        (tbl_send.sum_send + tbl_open.sum_open) AS total
+      FROM
+        (SELECT *
+        FROM
+          (SELECT
+            age_bucket,
+            activity_type,
+            SUM(time_spent) AS sum_send
+          FROM
+            (SELECT
+              a.*,
+              ab.age_bucket
+            FROM activities AS a
+            LEFT JOIN age_breakdown AS ab 
+            ON a.user_id = ab.user_id) AS tbl
+          GROUP BY age_bucket, activity_type
+          ORDER BY age_bucket, activity_type) AS tbl2
+        WHERE activity_type = 'send') AS tbl_send,
+        (SELECT *
+        FROM
+          (SELECT
+            age_bucket,
+            activity_type,
+            SUM(time_spent) AS sum_open
+          FROM
+            (SELECT
+              a.*,
+              ab.age_bucket
+            FROM activities AS a
+            LEFT JOIN age_breakdown AS ab 
+            ON a.user_id = ab.user_id) AS tbl
+          GROUP BY age_bucket, activity_type
+          ORDER BY age_bucket, activity_type) AS tbl2
+        WHERE activity_type = 'open') AS tbl_open
+      WHERE tbl_send.age_bucket = tbl_open.age_bucket) AS tbl3;
+
+Output:
+
+|age_bucket |send_perc  |open_perc  |
+|-----------|-----------|-----------|
+|21-25      |54.31      |45.69      |
+|26-30      |82.26      |17.74      |
+|31-35      |37.84      |62.16      |
