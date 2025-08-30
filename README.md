@@ -160,3 +160,45 @@ Output:
 |21-25      |54.31      |45.69      |
 |26-30      |82.26      |17.74      |
 |31-35      |37.84      |62.16      |
+
+## 4. Highest-Grossing Items
+Assume you're given a table containing data on Amazon customers and their spending on products in different category, write a query to identify the top two highest-grossing products within each category in the year 2022. The output should include the category, product, and total spend.
+
+`product_spend` table:
+
+|Column Name  |Type     |
+|-------------|---------|
+|category     |string   |
+|product      |string   |
+|user_id      |integer  |
+|spend        |decimal  |
+|transaction_date|timestamp|
+
+Query:
+
+    SELECT
+      category,
+      product,
+      total_spend
+    FROM
+      (SELECT
+        category,
+        product,
+        SUM(spend) AS total_spend,
+        RANK() 
+          OVER(PARTITION BY category ORDER BY SUM(spend) DESC) AS rank
+      FROM product_spend
+      WHERE EXTRACT(YEAR FROM transaction_date) = 2022
+      GROUP BY category, product
+      ORDER BY category, rank) AS temp
+    WHERE rank BETWEEN 1 AND 2;
+
+Output:
+
+|category   |product          |total_spend   |
+|-----------|-----------------|--------------|
+|appliance  |washing machine  |439.80        |
+|appliance  |refrigerator     |299.99        |
+|electronics|vacuum           |486.66        |
+|electronics|wireless headset |467.89        |
+
