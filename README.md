@@ -202,3 +202,54 @@ Output:
 |electronics|vacuum           |486.66        |
 |electronics|wireless headset |467.89        |
 
+## 5. Top Three Salaries
+As part of an ongoing analysis of salary distribution within the company, your manager has requested a report identifying high earners in each department. A 'high earner' within a department is defined as an employee with a salary ranking among the top three salaries within that department.
+
+You're tasked with identifying these high earners across all departments. Write a query to display the employee's name along with their department name and salary. In case of duplicates, sort the results of department name in ascending order, then by salary in descending order. If multiple employees have the same salary, then order them alphabetically.
+
+Note: Ensure to utilize the appropriate ranking window function to handle duplicate salaries effectively.
+
+`employee` schema:
+
+|column_name   |type         |description                            |
+|--------------|-------------|---------------------------------------|
+|employee_id   |integer      |The unique ID of the employee.         |
+|name          |string       |The name of the employee.              |
+|salary        |integer      |The salary of the employee.            |
+|department_id |integer      |The department ID of the employee.     |
+|manager_id    |integer      |The manager ID of the employee.        |
+
+`department` schema:
+
+|column_name    |type      |description                      |
+|---------------|----------|---------------------------------|
+|department_id  |integer   |The department ID of the employee.|
+|department_name|string    |The name of the department.      |
+
+Query:
+
+    SELECT
+      department_name,
+      name,
+      salary
+    FROM
+      (SELECT
+        e.*,
+        d.*,
+        DENSE_RANK()
+          OVER(PARTITION BY d.department_name ORDER BY e.salary DESC) AS rank
+      FROM employee AS e
+      LEFT JOIN department AS d
+      ON e.department_id = d.department_id
+      ORDER BY d.department_name, e.salary DESC, e.name) AS temp
+    WHERE rank BETWEEN 1 AND 3;
+
+ Output (first 5 row):
+
+|department_name     |name            |salary     |
+|--------------------|----------------|-----------|
+|Data Analytics      |Olivia Smith    |7000       |
+|Data Analytics      |Amelia Lee      |4000       |
+|Data Analytics      |James Anderson  |4000       |
+|Data Analytics      |Emma Thompson   |3800       |
+|Data Engineering    |Liam Brown      |13000      |
